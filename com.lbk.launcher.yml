@@ -1,9 +1,9 @@
 app-id: com.lbk.launcher
 runtime: org.freedesktop.Platform
-runtime-version: '23.08'
+runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
 base: org.electronjs.Electron2.BaseApp
-base-version: '23.08'
+base-version: '24.08'
 command: lbk-launcher
 
 finish-args:
@@ -13,6 +13,8 @@ finish-args:
   - --socket=wayland
   - --socket=pulseaudio
   - --device=all
+  # Gamepad/controller support (udev access for Chromium/Electron)
+  - --filesystem=/run/udev:ro
   # Access to Steam directories (for game detection)
   - --filesystem=~/.steam:ro
   - --filesystem=~/.local/share/Steam:ro
