@@ -100,3 +100,9 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:${{ steps.release.outputs.tag }}
+
+      - name: Trigger Coolify deploy
+        if: success()
+        run: |
+          curl -s -X POST "${{ secrets.COOLIFY_WEBHOOK }}" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}"
