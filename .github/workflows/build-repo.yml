@@ -34,7 +34,7 @@ jobs:
           flatpak install --user -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
           flatpak install --user -y flathub org.electronjs.Electron2.BaseApp//24.08
 
-      - name: Get latest release info
+      - name: Get latest release info and download AppImage
         id: release
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
@@ -51,22 +51,36 @@ jobs:
           # Get release info (works for both draft and published releases)
           RELEASE_JSON=$(gh api repos/Vadko/littlebit-launcher/releases --jq ".[] | select(.tag_name == \"$TAG\")")
 
-          # Get AppImage URL, size, and sha256
-          ASSET_URL=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .browser_download_url')
-          ASSET_SIZE=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .size')
-          echo "url=$ASSET_URL" >> "$GITHUB_OUTPUT"
-          echo "size=$ASSET_SIZE" >> "$GITHUB_OUTPUT"
+          # Get asset ID for API download (required for draft releases)
+          ASSET_ID=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .id')
 
-          # Download and compute sha256
-          curl -sL -H "Authorization: token $GH_TOKEN" "$ASSET_URL" -o /tmp/appimage
-          SHA256=$(sha256sum /tmp/appimage | cut -d' ' -f1)
+          # Download AppImage using API (works for both draft and published)
+          gh api repos/Vadko/littlebit-launcher/releases/assets/$ASSET_ID \
+            -H "Accept: application/octet-stream" > LBK-Launcher-linux.AppImage
+
+          # Compute sha256
+          SHA256=$(sha256sum LBK-Launcher-linux.AppImage | cut -d' ' -f1)
           echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
-          rm -f /tmp/appimage
 
-      - name: Patch manifest with current release
+      - name: Patch manifest to use local AppImage
         run: |
-          sed -i "s|url: https://github.com/Vadko/littlebit-launcher/releases/download/[^/]*/LBK-Launcher-linux.AppImage|url: ${{ steps.release.outputs.url }}|" com.lbk.launcher.yml
-          sed -i "s|sha256: [a-f0-9]\{64\}|sha256: ${{ steps.release.outputs.sha256 }}|" com.lbk.launcher.yml
+          # Use Python to patch the YAML properly
+          python3 << 'EOF'
+          import re
+
+          with open('com.lbk.launcher.yml', 'r') as f:
+              content = f.read()
+
+          # Replace the URL source with local path source
+          content = re.sub(
+              r'- type: file\n\s+url: https://github\.com/Vadko/littlebit-launcher/releases/download/[^/]+/LBK-Launcher-linux\.AppImage\n\s+sha256: [a-f0-9]{64}\n\s+dest-filename: LBK-Launcher-linux\.AppImage',
+              '- type: file\n        path: LBK-Launcher-linux.AppImage',
+              content
+          )
+
+          with open('com.lbk.launcher.yml', 'w') as f:
+              f.write(content)
+          EOF
 
       - name: Patch metainfo with current version
         run: |
