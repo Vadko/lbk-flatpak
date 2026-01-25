@@ -29,25 +29,21 @@ modules:
   - name: lbk-launcher
     buildsystem: simple
     build-commands:
-      - install -Dm755 apply_extra.sh /app/bin/apply_extra
+      # Extract AppImage at build time
+      - chmod +x LBK-Launcher-linux.AppImage
+      - ./LBK-Launcher-linux.AppImage --appimage-extract
+      - mv squashfs-root /app/lbk-launcher
+      # Install wrapper script
       - install -Dm755 lbk-launcher.sh /app/bin/lbk-launcher
+      # Install desktop and metadata
       - install -Dm644 com.lbk.launcher.desktop /app/share/applications/com.lbk.launcher.desktop
       - install -Dm644 com.lbk.launcher.metainfo.xml /app/share/metainfo/com.lbk.launcher.metainfo.xml
       - install -Dm644 icon-256.png /app/share/icons/hicolor/256x256/apps/com.lbk.launcher.png
     sources:
-      - type: extra-data
-        filename: LBK-Launcher-linux.AppImage
-        url: https://github.com/Vadko/littlebit-launcher/releases/download/v1.29.0/LBK-Launcher-linux.AppImage
-        size: 128302808
-        sha256: 0000000000000000000000000000000000000000000000000000000000000000
-        x-checker-data:
-          type: json
-          url: https://api.github.com/repos/Vadko/littlebit-launcher/releases/latest
-          version-query: .tag_name | sub("^v"; "")
-          url-query: .assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .browser_download_url
-          size-query: .assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .size
       - type: file
-        path: apply_extra.sh
+        url: https://github.com/Vadko/littlebit-launcher/releases/download/v1.30.0/LBK-Launcher-linux.AppImage
+        sha256: 6bc274984c2459c128bd9c626129a22272b2949c18b011e7fa50dc7e775a6de0
+        dest-filename: LBK-Launcher-linux.AppImage
       - type: file
         path: lbk-launcher.sh
       - type: file

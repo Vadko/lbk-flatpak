@@ -62,9 +62,8 @@ jobs:
 
       - name: Patch manifest with current release
         run: |
-          sed -i "s|url: https://github.com/Vadko/littlebit-launcher/releases/download/.*$|url: ${{ steps.release.outputs.url }}|" com.lbk.launcher.yml
-          sed -i "s|size: .*|size: ${{ steps.release.outputs.size }}|" com.lbk.launcher.yml
-          sed -i "s|sha256: .*|sha256: ${{ steps.release.outputs.sha256 }}|" com.lbk.launcher.yml
+          sed -i "s|url: https://github.com/Vadko/littlebit-launcher/releases/download/[^/]*/LBK-Launcher-linux.AppImage|url: ${{ steps.release.outputs.url }}|" com.lbk.launcher.yml
+          sed -i "s|sha256: [a-f0-9]\{64\}|sha256: ${{ steps.release.outputs.sha256 }}|" com.lbk.launcher.yml
 
       - name: Patch metainfo with current version
         run: |
