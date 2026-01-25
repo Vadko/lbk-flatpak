@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.lbk.launcher</id>
+  <name>LBK Launcher</name>
+  <summary>Інсталятор українізаторів відеоігор</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <description>
+    <p>
+      LBK Launcher — це застосунок для встановлення українських локалізацій відеоігор.
+      Дозволяє легко знаходити, завантажувати та встановлювати українізатори для ваших ігор.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">com.lbk.launcher.desktop</launchable>
+
+  <url type="homepage">https://littlebit.org.ua</url>
+  <url type="bugtracker">https://github.com/Vadko/littlebit-launcher/issues</url>
+
+  <developer id="ua.org.littlebit">
+    <name>LB UA</name>
+  </developer>
+
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="1.29.1" date="2025-01-01">
+      <description>
+        <p>Покращення продуктивності та виправлення помилок.</p>
+      </description>
+    </release>
+  </releases>
+</component>

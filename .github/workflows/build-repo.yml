@@ -1,0 +1,113 @@
+name: Build Flatpak Repo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      app_version:
+        description: 'App version tag (e.g. v1.29.0). Leave empty for latest.'
+        required: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Flatpak and flatpak-builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+          flatpak install --user -y flathub org.electronjs.Electron2.BaseApp//24.08
+
+      - name: Get latest release info
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -n "${{ github.event.inputs.app_version }}" ]; then
+            TAG="${{ github.event.inputs.app_version }}"
+          else
+            TAG=$(gh api repos/Vadko/littlebit-launcher/releases/latest --jq '.tag_name')
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+          # Get AppImage URL, size, and sha256
+          ASSET_URL=$(gh api repos/Vadko/littlebit-launcher/releases/tags/$TAG --jq '.assets[] | select(.name == "LB-Launcher-linux.AppImage") | .browser_download_url')
+          ASSET_SIZE=$(gh api repos/Vadko/littlebit-launcher/releases/tags/$TAG --jq '.assets[] | select(.name == "LB-Launcher-linux.AppImage") | .size')
+          echo "url=$ASSET_URL" >> "$GITHUB_OUTPUT"
+          echo "size=$ASSET_SIZE" >> "$GITHUB_OUTPUT"
+
+          # Download and compute sha256
+          curl -sL "$ASSET_URL" -o /tmp/appimage
+          SHA256=$(sha256sum /tmp/appimage | cut -d' ' -f1)
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          rm -f /tmp/appimage
+
+      - name: Patch manifest with current release
+        run: |
+          sed -i "s|url: https://github.com/Vadko/littlebit-launcher/releases/download/.*$|url: ${{ steps.release.outputs.url }}|" com.lbk.launcher.yml
+          sed -i "s|size: .*|size: ${{ steps.release.outputs.size }}|" com.lbk.launcher.yml
+          sed -i "s|sha256: .*|sha256: ${{ steps.release.outputs.sha256 }}|" com.lbk.launcher.yml
+
+      - name: Build Flatpak
+        run: |
+          flatpak-builder --user --force-clean --repo=repo build-dir com.lbk.launcher.yml
+
+      - name: Generate GPG key (or import existing)
+        run: |
+          # Use repo-specific GPG key from secrets, or generate ephemeral one
+          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+            GPG_KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -1 | cut -d: -f5)
+          else
+            # Generate ephemeral key for testing
+            gpg --batch --gen-key <<EOF2
+          Key-Type: RSA
+          Key-Length: 4096
+          Name-Real: LBK Flatpak Repo
+          Name-Email: flatpak@littlebit.org.ua
+          Expire-Date: 0
+          %no-protection
+          EOF2
+            GPG_KEY_ID=$(gpg --list-keys --with-colons "LBK Flatpak Repo" | grep '^pub' | head -1 | cut -d: -f5)
+          fi
+          echo "GPG_KEY_ID=$GPG_KEY_ID" >> "$GITHUB_ENV"
+
+      - name: Sign and update repo
+        run: |
+          flatpak build-sign repo --gpg-sign="$GPG_KEY_ID"
+          flatpak build-update-repo repo --gpg-sign="$GPG_KEY_ID" --generate-static-deltas
+
+      - name: Export GPG public key
+        run: |
+          mkdir -p gpg
+          gpg --export "$GPG_KEY_ID" > gpg/pub.gpg
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.release.outputs.tag }}

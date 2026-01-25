@@ -1,0 +1,8 @@
+[Flatpak Ref]
+Name=com.lbk.launcher
+Branch=stable
+Title=LBK Launcher
+Url=https://flatpak.lbklauncher.com/repo
+IsRuntime=false
+Comment=Інсталятор українізаторів відеоігор
+Homepage=https://lbklauncher.com

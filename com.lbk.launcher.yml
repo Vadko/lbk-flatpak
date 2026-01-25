@@ -1,0 +1,60 @@
+app-id: com.lbk.launcher
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '24.08'
+command: lbk-launcher
+
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=x11
+  - --socket=wayland
+  - --socket=pulseaudio
+  - --device=dri
+  # Access to Steam directories (for game detection)
+  - --filesystem=~/.steam:ro
+  - --filesystem=~/.local/share/Steam:ro
+  - --filesystem=~/.var/app/com.valvesoftware.Steam:ro
+  # Access to home for game mods installation
+  - --filesystem=home
+  # Talk to Flatpak Steam if needed
+  - --talk-name=org.freedesktop.Flatpak
+  # System tray
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.Notifications
+
+modules:
+  - name: lbk-launcher
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 apply_extra.sh /app/bin/apply_extra
+      - install -Dm755 lbk-launcher.sh /app/bin/lbk-launcher
+      - install -Dm644 com.lbk.launcher.desktop /app/share/applications/com.lbk.launcher.desktop
+      - install -Dm644 com.lbk.launcher.metainfo.xml /app/share/metainfo/com.lbk.launcher.metainfo.xml
+      - install -Dm644 icon-256.png /app/share/icons/hicolor/256x256/apps/com.lbk.launcher.png
+    sources:
+      - type: extra-data
+        filename: LB-Launcher-linux.AppImage
+        url: https://github.com/Vadko/littlebit-launcher/releases/download/v1.29.0/LB-Launcher-linux.AppImage
+        size: 128302808
+        # TODO: replace with actual sha256 checksum
+        sha256: REPLACE_WITH_ACTUAL_SHA256
+        x-checker-data:
+          type: json
+          url: https://api.github.com/repos/Vadko/littlebit-launcher/releases/latest
+          version-query: .tag_name | sub("^v"; "")
+          url-query: .assets[] | select(.name == "LB-Launcher-linux.AppImage") | .browser_download_url
+          size-query: .assets[] | select(.name == "LB-Launcher-linux.AppImage") | .size
+      - type: file
+        path: apply_extra.sh
+      - type: file
+        path: lbk-launcher.sh
+      - type: file
+        path: com.lbk.launcher.desktop
+      - type: file
+        path: com.lbk.launcher.metainfo.xml
+      - type: file
+        path: icons/icon-256.png
+        dest-filename: icon-256.png

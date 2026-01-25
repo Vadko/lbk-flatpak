@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=LBK Launcher
+Comment=Інсталятор українізаторів відеоігор
+Exec=lbk-launcher %U
+Icon=com.lbk.launcher
+Terminal=false
+Type=Application
+Categories=Utility;Game;
+MimeType=x-scheme-handler/lbk;
+StartupNotify=true
+StartupWMClass=LB Launcher
