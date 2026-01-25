@@ -3,6 +3,8 @@ name: Build Flatpak Repo
 on:
   push:
     branches: [main]
+  repository_dispatch:
+    types: [new-release]
   workflow_dispatch:
     inputs:
       app_version:
@@ -39,14 +41,16 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.app_version }}" ]; then
             TAG="${{ github.event.inputs.app_version }}"
+          elif [ -n "${{ github.event.client_payload.tag }}" ]; then
+            TAG="${{ github.event.client_payload.tag }}"
           else
             TAG=$(gh api repos/Vadko/littlebit-launcher/releases/latest --jq '.tag_name')
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
           # Get AppImage URL, size, and sha256
-          ASSET_URL=$(gh api repos/Vadko/littlebit-launcher/releases/tags/$TAG --jq '.assets[] | select(.name == "LB-Launcher-linux.AppImage") | .browser_download_url')
-          ASSET_SIZE=$(gh api repos/Vadko/littlebit-launcher/releases/tags/$TAG --jq '.assets[] | select(.name == "LB-Launcher-linux.AppImage") | .size')
+          ASSET_URL=$(gh api repos/Vadko/littlebit-launcher/releases/tags/$TAG --jq '.assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .browser_download_url')
+          ASSET_SIZE=$(gh api repos/Vadko/littlebit-launcher/releases/tags/$TAG --jq '.assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .size')
           echo "url=$ASSET_URL" >> "$GITHUB_OUTPUT"
           echo "size=$ASSET_SIZE" >> "$GITHUB_OUTPUT"
 
@@ -62,39 +66,21 @@ jobs:
           sed -i "s|size: .*|size: ${{ steps.release.outputs.size }}|" com.lbk.launcher.yml
           sed -i "s|sha256: .*|sha256: ${{ steps.release.outputs.sha256 }}|" com.lbk.launcher.yml
 
+      - name: Patch metainfo with current version
+        run: |
+          VERSION="${{ steps.release.outputs.tag }}"
+          VERSION="${VERSION#v}"
+          DATE=$(date +%Y-%m-%d)
+          sed -i "s|<release version=\"[^\"]*\" date=\"[^\"]*\">|<release version=\"${VERSION}\" date=\"${DATE}\">|" com.lbk.launcher.metainfo.xml
+
       - name: Build Flatpak
         run: |
           flatpak-builder --user --force-clean --repo=repo build-dir com.lbk.launcher.yml
 
-      - name: Generate GPG key (or import existing)
+      - name: Update repo summary with static deltas
         run: |
-          # Use repo-specific GPG key from secrets, or generate ephemeral one
-          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
-            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-            GPG_KEY_ID=$(gpg --list-keys --with-colons | grep '^pub' | head -1 | cut -d: -f5)
-          else
-            # Generate ephemeral key for testing
-            gpg --batch --gen-key <<EOF2
-          Key-Type: RSA
-          Key-Length: 4096
-          Name-Real: LBK Flatpak Repo
-          Name-Email: flatpak@littlebit.org.ua
-          Expire-Date: 0
-          %no-protection
-          EOF2
-            GPG_KEY_ID=$(gpg --list-keys --with-colons "LBK Flatpak Repo" | grep '^pub' | head -1 | cut -d: -f5)
-          fi
-          echo "GPG_KEY_ID=$GPG_KEY_ID" >> "$GITHUB_ENV"
-
-      - name: Sign and update repo
-        run: |
-          flatpak build-sign repo --gpg-sign="$GPG_KEY_ID"
-          flatpak build-update-repo repo --gpg-sign="$GPG_KEY_ID" --generate-static-deltas
-
-      - name: Export GPG public key
-        run: |
-          mkdir -p gpg
-          gpg --export "$GPG_KEY_ID" > gpg/pub.gpg
+          flatpak build-update-repo repo --generate-static-deltas --no-update-summary || true
+          flatpak build-update-repo repo
 
       - name: Log in to Container Registry
         uses: docker/login-action@v3

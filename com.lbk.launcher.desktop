@@ -8,4 +8,4 @@ Type=Application
 Categories=Utility;Game;
 MimeType=x-scheme-handler/lbk;
 StartupNotify=true
-StartupWMClass=LB Launcher
+StartupWMClass=LBK Launcher

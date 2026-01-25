@@ -4,29 +4,47 @@ Flatpak-пакет та OSTree-репозиторій для [LBK Launcher](http
 
 ## Для користувачів
 
-### Додати репозиторій
+### Варіант 1: Встановити через .flatpakref (найпростіше)
 
-```bash
-flatpak remote-add --if-not-exists lbk https://YOUR_COOLIFY_DOMAIN/repo --gpg-import=<(curl -s https://YOUR_COOLIFY_DOMAIN/repo/key.gpg)
+Просто відкрий посилання — система запропонує встановити:
+
+```
+https://flatpak.lbklauncher.com/com.lbk.launcher.flatpakref
 ```
 
-### Встановити
+Або через термінал:
 
 ```bash
+flatpak install https://flatpak.lbklauncher.com/com.lbk.launcher.flatpakref
+```
+
+### Варіант 2: Додати репозиторій вручну
+
+```bash
+# Додати репо
+flatpak remote-add --if-not-exists --no-gpg-verify lbk https://flatpak.lbklauncher.com/repo
+
+# Встановити
 flatpak install lbk com.lbk.launcher
 ```
 
-### Оновити
-
-```bash
-flatpak update com.lbk.launcher
-```
-
-### Запустити
+### Запуск
 
 ```bash
 flatpak run com.lbk.launcher
 ```
+
+### Оновлення
+
+```bash
+# Перевірити наявність оновлень
+flatpak remote-ls --updates lbk
+
+# Оновити
+flatpak update com.lbk.launcher
+```
+
+GNOME Software та KDE Discover автоматично перевіряють оновлення з усіх підключених remote — якщо репо додано, оновлення з'являться в системному центрі оновлень.
 
 ## Для розробників
 
@@ -44,35 +62,4 @@ flatpak-builder --user --force-clean --repo=repo build-dir com.lbk.launcher.yml
 
 # Тестовий запуск
 flatpak-builder --run build-dir com.lbk.launcher.yml lbk-launcher
-```
-
-### CI/CD
-
-GitHub Actions автоматично:
-1. Завантажує останній AppImage з релізів littlebit-launcher
-2. Збирає Flatpak
-3. Генерує OSTree repo з GPG-підписом
-4. Пакує в Docker-образ (Nginx) та пушить до `ghcr.io`
-
-### Coolify
-
-Додай Docker-образ `ghcr.io/vadko/lbk-flatpak:latest` як сервіс у Coolify.
-Налаштуй домен (наприклад `flatpak.littlebit.org.ua`).
-
-### GPG ключ
-
-Для продакшну — згенеруй постійний GPG ключ та додай приватну частину як секрет `GPG_PRIVATE_KEY` в GitHub Actions.
-
-```bash
-gpg --batch --gen-key <<EOF
-Key-Type: RSA
-Key-Length: 4096
-Name-Real: LBK Flatpak Repo
-Name-Email: flatpak@littlebit.org.ua
-Expire-Date: 0
-%no-protection
-EOF
-
-# Експортувати приватний ключ для GitHub Secrets
-gpg --export-secret-keys --armor "LBK Flatpak Repo"
 ```

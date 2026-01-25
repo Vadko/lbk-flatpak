@@ -15,11 +15,11 @@
 
   <launchable type="desktop-id">com.lbk.launcher.desktop</launchable>
 
-  <url type="homepage">https://littlebit.org.ua</url>
+  <url type="homepage">https://lbklauncher.com</url>
   <url type="bugtracker">https://github.com/Vadko/littlebit-launcher/issues</url>
 
-  <developer id="ua.org.littlebit">
-    <name>LB UA</name>
+  <developer id="com.lbk.launcher">
+    <name>LBK</name>
   </developer>
 
   <content_rating type="oars-1.1" />

@@ -36,17 +36,16 @@ modules:
       - install -Dm644 icon-256.png /app/share/icons/hicolor/256x256/apps/com.lbk.launcher.png
     sources:
       - type: extra-data
-        filename: LB-Launcher-linux.AppImage
-        url: https://github.com/Vadko/littlebit-launcher/releases/download/v1.29.0/LB-Launcher-linux.AppImage
+        filename: LBK-Launcher-linux.AppImage
+        url: https://github.com/Vadko/littlebit-launcher/releases/download/v1.29.0/LBK-Launcher-linux.AppImage
         size: 128302808
-        # TODO: replace with actual sha256 checksum
-        sha256: REPLACE_WITH_ACTUAL_SHA256
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000
         x-checker-data:
           type: json
           url: https://api.github.com/repos/Vadko/littlebit-launcher/releases/latest
           version-query: .tag_name | sub("^v"; "")
-          url-query: .assets[] | select(.name == "LB-Launcher-linux.AppImage") | .browser_download_url
-          size-query: .assets[] | select(.name == "LB-Launcher-linux.AppImage") | .size
+          url-query: .assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .browser_download_url
+          size-query: .assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .size
       - type: file
         path: apply_extra.sh
       - type: file
