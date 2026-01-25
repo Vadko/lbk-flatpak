@@ -75,7 +75,7 @@ jobs:
 
       - name: Build Flatpak
         run: |
-          flatpak-builder --user --force-clean --repo=repo build-dir com.lbk.launcher.yml
+          flatpak-builder --user --force-clean --default-branch=stable --repo=repo build-dir com.lbk.launcher.yml
 
       - name: Update repo summary with static deltas
         run: |
