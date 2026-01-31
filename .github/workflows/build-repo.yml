@@ -89,14 +89,20 @@ jobs:
           DATE=$(date +%Y-%m-%d)
           sed -i "s|<release version=\"[^\"]*\" date=\"[^\"]*\">|<release version=\"${VERSION}\" date=\"${DATE}\">|" com.lbk.launcher.metainfo.xml
 
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
+
       - name: Build Flatpak
         run: |
-          flatpak-builder --user --force-clean --default-branch=stable --repo=repo build-dir com.lbk.launcher.yml
+          flatpak-builder --user --force-clean --default-branch=stable --gpg-sign=284A1984 --repo=repo build-dir com.lbk.launcher.yml
 
-      - name: Update repo summary with static deltas
+      - name: Update repo with appstream and static deltas
         run: |
-          flatpak build-update-repo repo --generate-static-deltas --no-update-summary || true
-          flatpak build-update-repo repo
+          flatpak build-update-repo repo \
+            --gpg-sign=284A1984 \
+            --generate-static-deltas \
+            --prune
 
       - name: Log in to Container Registry
         uses: docker/login-action@v3
