@@ -21,8 +21,11 @@ flatpak install https://flatpak.lbklauncher.com/com.lbk.launcher.flatpakref
 ### Варіант 2: Додати репозиторій вручну
 
 ```bash
-# Додати репо
-flatpak remote-add --if-not-exists --no-gpg-verify lbk https://flatpak.lbklauncher.com/repo
+# Завантажити публічний GPG ключ
+curl -fsSL https://flatpak.lbklauncher.com/lbk.gpg -o /tmp/lbk.gpg
+
+# Додати репо з GPG перевіркою
+flatpak remote-add --if-not-exists --gpg-import=/tmp/lbk.gpg lbk https://flatpak.lbklauncher.com/repo
 
 # Встановити
 flatpak install lbk com.lbk.launcher
@@ -57,8 +60,8 @@ GNOME Software та KDE Discover автоматично перевіряють �
 flatpak install flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
 flatpak install flathub org.electronjs.Electron2.BaseApp//24.08
 
-# Збірка
-flatpak-builder --user --force-clean --repo=repo build-dir com.lbk.launcher.yml
+# Збірка з GPG підписом
+flatpak-builder --user --force-clean --gpg-sign=284A1984 --repo=repo build-dir com.lbk.launcher.yml
 
 # Тестовий запуск
 flatpak-builder --run build-dir com.lbk.launcher.yml lbk-launcher
