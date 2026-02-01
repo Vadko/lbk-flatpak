@@ -44,17 +44,18 @@ jobs:
           elif [ -n "${{ github.event.client_payload.tag }}" ]; then
             TAG="${{ github.event.client_payload.tag }}"
           else
-            TAG=$(gh api repos/Vadko/littlebit-launcher/releases --jq '.[0].tag_name')
+            # Get latest published (non-draft) release
+            TAG=$(gh api repos/Vadko/littlebit-launcher/releases --jq '[.[] | select(.draft == false)] | .[0].tag_name')
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-          # Get release info (works for both draft and published releases)
+          # Get release info
           RELEASE_JSON=$(gh api repos/Vadko/littlebit-launcher/releases --jq ".[] | select(.tag_name == \"$TAG\")")
 
-          # Get asset ID for API download (required for draft releases)
+          # Get asset ID for API download
           ASSET_ID=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .id')
 
-          # Download AppImage using API (works for both draft and published)
+          # Download AppImage
           gh api repos/Vadko/littlebit-launcher/releases/assets/$ASSET_ID \
             -H "Accept: application/octet-stream" > LBK-Launcher-linux.AppImage
 
