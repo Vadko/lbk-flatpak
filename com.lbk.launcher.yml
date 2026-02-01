@@ -15,10 +15,31 @@ finish-args:
   - --device=all
   # Gamepad/controller support (udev access for Chromium/Electron)
   - --filesystem=/run/udev:ro
-  # Access to Steam directories (for game detection)
-  - --filesystem=~/.steam:ro
-  - --filesystem=~/.local/share/Steam:ro
-  - --filesystem=~/.var/app/com.valvesoftware.Steam:ro
+  # Access to Steam directories (for game detection and mod installation)
+  # Native Steam
+  - --filesystem=~/.steam
+  - --filesystem=~/.local/share/Steam
+  # Flatpak Steam
+  - --filesystem=~/.var/app/com.valvesoftware.Steam/.local/share/Steam
+  # Snap Steam
+  - --filesystem=~/snap/steam/common/.local/share/Steam
+  - --filesystem=~/snap/steam/common/.steam
+  # Heroic Games Launcher (Epic, GOG, Amazon)
+  - --filesystem=~/.config/heroic
+  - --filesystem=~/Games/Heroic
+  - --filesystem=~/.var/app/com.heroicgameslauncher.hgl
+  # Legendary (Epic Games CLI)
+  - --filesystem=~/.config/legendary
+  # GOG Games
+  - --filesystem=~/GOG Games
+  # Lutris (EA, Ubisoft, etc.)
+  - --filesystem=~/.local/share/lutris
+  - --filesystem=~/.config/lutris
+  - --filesystem=~/Games
+  - --filesystem=~/.var/app/net.lutris.Lutris
+  # Bottles (EA, Ubisoft, etc.)
+  - --filesystem=~/.local/share/bottles
+  - --filesystem=~/.var/app/com.usebottles.bottles
   # Access to home for game mods installation
   - --filesystem=home
   # Talk to Flatpak Steam if needed
