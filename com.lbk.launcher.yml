@@ -56,6 +56,8 @@ modules:
       - chmod +x LBK-Launcher-linux.AppImage
       - ./LBK-Launcher-linux.AppImage --appimage-extract
       - mv squashfs-root /app/lbk-launcher
+      # Patch desktop filename for correct Wayland app_id
+      - patch-desktop-filename /app/lbk-launcher/resources/app.asar com.lbk.launcher
       # Install wrapper script
       - install -Dm755 lbk-launcher.sh /app/bin/lbk-launcher
       # Install desktop and metadata
