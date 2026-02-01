@@ -16,11 +16,17 @@ finish-args:
   # Gamepad/controller support (udev access for Chromium/Electron)
   - --filesystem=/run/udev:ro
   # Access to Steam directories (for game detection and mod installation)
-  # Native Steam
+  # Native Steam (home paths covered by --filesystem=home below)
   - --filesystem=~/.steam
   - --filesystem=~/.local/share/Steam
+  # Debian-specific Steam path
+  - --filesystem=~/.steam/debian-installation
+  # System-wide Steam (some distros)
+  - --filesystem=/usr/share/steam:ro
+  - --filesystem=/usr/lib/steam:ro
+  - --filesystem=/opt/steam:ro
   # Flatpak Steam
-  - --filesystem=~/.var/app/com.valvesoftware.Steam/.local/share/Steam
+  - --filesystem=~/.var/app/com.valvesoftware.Steam
   # Snap Steam
   - --filesystem=~/snap/steam/common/.local/share/Steam
   - --filesystem=~/snap/steam/common/.steam
