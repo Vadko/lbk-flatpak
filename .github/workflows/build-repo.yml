@@ -40,16 +40,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           if [ -n "${{ github.event.inputs.app_version }}" ]; then
+            # Manual input - use as is (can be draft)
             TAG="${{ github.event.inputs.app_version }}"
           elif [ -n "${{ github.event.client_payload.tag }}" ]; then
+            # From repository_dispatch - use as is (can be draft)
             TAG="${{ github.event.client_payload.tag }}"
           else
-            # Get latest published (non-draft) release
+            # Auto-detect: only published (non-draft) releases
             TAG=$(gh api repos/Vadko/littlebit-launcher/releases --jq '[.[] | select(.draft == false)] | .[0].tag_name')
           fi
+          echo "Building version: $TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-          # Get release info
+          # Get release info (works for both draft and published)
           RELEASE_JSON=$(gh api repos/Vadko/littlebit-launcher/releases --jq ".[] | select(.tag_name == \"$TAG\")")
 
           # Get asset ID for API download
