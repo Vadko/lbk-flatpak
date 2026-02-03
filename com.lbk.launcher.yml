@@ -47,6 +47,10 @@ finish-args:
   - --filesystem=~/.var/app/com.usebottles.bottles
   # Access to home for game mods installation
   - --filesystem=home
+  # Access to mounted drives (custom Steam libraries, game installs)
+  - --filesystem=/mnt
+  - --filesystem=/media
+  - --filesystem=/run/media
   # Talk to Flatpak Steam if needed
   - --talk-name=org.freedesktop.Flatpak
   # System tray
