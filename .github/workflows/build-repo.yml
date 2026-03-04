@@ -56,14 +56,14 @@ jobs:
           RELEASE_JSON=$(gh api repos/Vadko/lbk-launcher/releases --jq ".[] | select(.tag_name == \"$TAG\")")
 
           # Get asset ID for API download
-          ASSET_ID=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name == "LBK.Launcher-linux.AppImage") | .id')
+          ASSET_ID=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name == "LBK-Launcher-linux.AppImage") | .id')
 
           # Download AppImage
           gh api repos/Vadko/lbk-launcher/releases/assets/$ASSET_ID \
-            -H "Accept: application/octet-stream" > LBK.Launcher-linux.AppImage
+            -H "Accept: application/octet-stream" > LBK-Launcher-linux.AppImage
 
           # Compute sha256
-          SHA256=$(sha256sum LBK.Launcher-linux.AppImage | cut -d' ' -f1)
+          SHA256=$(sha256sum LBK-Launcher-linux.AppImage | cut -d' ' -f1)
           echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
 
       - name: Patch manifest to use local AppImage
@@ -78,7 +78,7 @@ jobs:
           # Replace the URL source with local path source
           content = re.sub(
               r'- type: file\n\s+url: https://github\.com/Vadko/lbk-launcher/releases/download/[^/]+/LBK\.Launcher-linux\.AppImage\n\s+sha256: [a-f0-9]{64}\n\s+dest-filename: LBK\.Launcher-linux\.AppImage',
-              '- type: file\n        path: LBK.Launcher-linux.AppImage',
+              '- type: file\n        path: LBK-Launcher-linux.AppImage',
               content
           )
 
