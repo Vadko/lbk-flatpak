@@ -77,7 +77,7 @@ jobs:
 
           # Replace the URL source with local path source
           content = re.sub(
-              r'- type: file\n\s+url: https://github\.com/Vadko/lbk-launcher/releases/download/[^/]+/LBK\.Launcher-linux\.AppImage\n\s+sha256: [a-f0-9]{64}\n\s+dest-filename: LBK\.Launcher-linux\.AppImage',
+              r'- type: file\n\s+url: https://github\.com/Vadko/lbk-launcher/releases/download/[^/]+/LBK-Launcher-linux\.AppImage\n\s+sha256: [a-f0-9]{64}\n\s+dest-filename: LBK-Launcher-linux\.AppImage',
               '- type: file\n        path: LBK-Launcher-linux.AppImage',
               content
           )
