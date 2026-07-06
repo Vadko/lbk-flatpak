@@ -8,7 +8,7 @@ command: lbk-launcher
 
 # 32-bit (i386) runtime for Proton/pressure-vessel run via umu
 x-gl-version: &gl-version '1.4'
-x-gl-versions: &gl-versions 24.08;24.08-extra;1.4
+x-gl-versions: &gl-versions 24.08;1.4
 x-gl-merge-dirs: &gl-merge-dirs vulkan/icd.d;glvnd/egl_vendor.d;OpenCL/vendors;lib/dri;lib/d3d;vulkan/explicit_layer.d;vulkan/implicit_layer.d
 
 sdk-extensions:
@@ -27,7 +27,14 @@ finish-args:
   - --allow=multiarch
   - --allow=per-app-dev-shm
   - --talk-name=org.freedesktop.portal.Background
+  - --filesystem=xdg-data/umu:create
+  - --env=PATH=/app/bin:/app/utils/bin:/usr/bin
   - --env=XDG_DATA_DIRS=/app/share:/usr/lib/extensions/vulkan/share:/usr/share:/usr/share/runtime/share:/run/host/user-share:/run/host/share:/usr/lib/pressure-vessel/overrides/share
+  # Keep the host Steam runtime from leaking into the sandboxed Proton
+  - --unset-env=STEAM_RUNTIME
+  - --unset-env=STEAM_RUNTIME_PREFER_HOST_LIBRARIES
+  - --unset-env=SDL_VIDEODRIVER
+  - --unset-env=LD_PRELOAD
   # Gamepad/controller support (udev access for Chromium/Electron)
   - --filesystem=/run/udev:ro
   # Access to Steam directories (for game detection and mod installation)
@@ -95,24 +102,48 @@ add-extensions:
     enable-if: active-gl-driver
     autoprune-unless: active-gl-driver
 
+  org.freedesktop.Platform.VAAPI.Intel.i386:
+    directory: lib/i386-linux-gnu/dri/intel-vaapi-driver
+    version: *runtime-version
+    versions: *runtime-version
+    autodelete: false
+    no-autodownload: true
+    add-ld-path: lib
+    download-if: have-intel-gpu
+    autoprune-unless: have-intel-gpu
+
+  # Steam's pressure-vessel / steam-runtime-tools (provides the i386 capsule
+  # tools umu needs to set up the 32-bit container). Auto-installed with the app
+  # (no no-autodownload) since Proton can't run without it.
+  com.valvesoftware.Steam.Utility:
+    subdirectories: true
+    directory: utils
+    version: stable
+    versions: stable;beta;test
+    add-ld-path: lib
+    merge-dirs: bin
+    autodelete: true
+
 modules:
-  # Create the i386 mount points + ld.so.conf the extensions above need
+  # Create the i386 + utils mount points and ld.so.conf the extensions above need
+  # (mirrors the Heroic flatpak so pressure-vessel finds the 32-bit ld.so/libs).
   - name: platform-bootstrap
     buildsystem: simple
     build-commands:
       - |
         set -e
+        mkdir -p /app/bin
+        mkdir -p /app/utils
         mkdir -p /app/lib/i386-linux-gnu/GL
-        mkdir -p /app/lib/debug/lib/i386-linux-gnu/GL
+        mkdir -p /app/lib/debug/lib/i386-linux-gnu
+        mkdir -p /app/lib/i386-linux-gnu/dri/intel-vaapi-driver
         install -Dm644 -t /app/etc ld.so.conf
     sources:
       - type: inline
         dest-filename: ld.so.conf
         contents: |
-          include /run/flatpak/ld.so.conf.d/app-*-org.freedesktop.Platform.GL32.*.conf
           /app/lib32
           /app/lib/i386-linux-gnu
-          /lib64
 
   - name: lbk-launcher
     buildsystem: simple
