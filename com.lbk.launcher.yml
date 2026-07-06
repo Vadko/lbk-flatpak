@@ -1,14 +1,14 @@
 app-id: com.lbk.launcher
 runtime: org.freedesktop.Platform
-runtime-version: &runtime-version '24.08'
+runtime-version: &runtime-version '25.08'
 sdk: org.freedesktop.Sdk
 base: org.electronjs.Electron2.BaseApp
-base-version: '24.08'
+base-version: '25.08'
 command: lbk-launcher
 
-# 32-bit (i386) runtime for Proton/pressure-vessel run via umu
+# 32-bit (i386) runtime for Proton/pressure-vessel run via umu (matches Heroic)
 x-gl-version: &gl-version '1.4'
-x-gl-versions: &gl-versions 24.08;1.4
+x-gl-versions: &gl-versions 25.08;1.4
 x-gl-merge-dirs: &gl-merge-dirs vulkan/icd.d;glvnd/egl_vendor.d;OpenCL/vendors;lib/dri;lib/d3d;vulkan/explicit_layer.d;vulkan/implicit_layer.d
 
 sdk-extensions:
@@ -26,15 +26,22 @@ finish-args:
   - --allow=devel
   - --allow=multiarch
   - --allow=per-app-dev-shm
+  - --allow=bluetooth
   - --talk-name=org.freedesktop.portal.Background
   - --filesystem=xdg-data/umu:create
-  - --env=PATH=/app/bin:/app/utils/bin:/usr/bin
+  # gamescope socket: lets the Proton game window show up in Steam Deck game mode
+  - --filesystem=xdg-run/gamescope-0:rw
+  - --env=PATH=/app/bin:/app/utils/bin:/usr/bin:/usr/lib/extensions/vulkan/MangoHud/bin:/usr/lib/extensions/vulkan/gamescope/bin:/usr/lib/extensions/vulkan/OBSVkCapture/bin
+  - --env=LD_LIBRARY_PATH=/usr/lib/extensions/vulkan/gamescope/lib
   - --env=XDG_DATA_DIRS=/app/share:/usr/lib/extensions/vulkan/share:/usr/share:/usr/share/runtime/share:/run/host/user-share:/run/host/share:/usr/lib/pressure-vessel/overrides/share
-  # Keep the host Steam runtime from leaking into the sandboxed Proton
+  # Keep the host Steam runtime from leaking into the sandboxed Proton (as Heroic does)
   - --unset-env=STEAM_RUNTIME
   - --unset-env=STEAM_RUNTIME_PREFER_HOST_LIBRARIES
   - --unset-env=SDL_VIDEODRIVER
-  - --unset-env=LD_PRELOAD
+  - --unset-env=ALSA_CONFIG_PATH
+  - --unset-env=MESA_GLSL_CACHE_DIR
+  # Wine uses UDisks2 to enumerate disk drives
+  - --system-talk-name=org.freedesktop.UDisks2
   # Gamepad/controller support (udev access for Chromium/Electron)
   - --filesystem=/run/udev:ro
   # Access to Steam directories (for game detection and mod installation)
@@ -125,25 +132,38 @@ add-extensions:
     autodelete: true
 
 modules:
-  # Create the i386 + utils mount points and ld.so.conf the extensions above need
-  # (mirrors the Heroic flatpak so pressure-vessel finds the 32-bit ld.so/libs).
+  # Create the i386 + utils mount points and ld.so.conf the extensions above need.
+  # Mirrors the canonical umu-launcher flatpak exactly so pressure-vessel can
+  # find the 32-bit ld.so (via /app/links/lib/i386-linux-gnu) and 32-bit libs.
   - name: platform-bootstrap
     buildsystem: simple
     build-commands:
       - |
         set -e
         mkdir -p /app/bin
-        mkdir -p /app/utils
+        mkdir -p /app/lib/i386-linux-gnu
         mkdir -p /app/lib/i386-linux-gnu/GL
-        mkdir -p /app/lib/debug/lib/i386-linux-gnu
         mkdir -p /app/lib/i386-linux-gnu/dri/intel-vaapi-driver
+        mkdir -p /app/lib/debug/lib/i386-linux-gnu
+        mkdir -p /app/lib/debug/lib/i386-linux-gnu/GL
         install -Dm644 -t /app/etc ld.so.conf
+        mkdir -p /app/lib{,32}/ffmpeg
+        mkdir -p /app/share/steam/compatibilitytools.d
+        mkdir -p /app/utils /app/share/vulkan
+        ln -srv /app/{utils/,}share/vulkan/explicit_layer.d
+        ln -srv /app/{utils/,}share/vulkan/implicit_layer.d
+        mkdir -p /app/links/lib
+        ln -srv /app/lib /app/links/lib/x86_64-linux-gnu
+        ln -srv /app/lib32 /app/links/lib/i386-linux-gnu
     sources:
       - type: inline
         dest-filename: ld.so.conf
         contents: |
+          # We just make any GL32 extension have higher priority
+          include /run/flatpak/ld.so.conf.d/app-*-org.freedesktop.Platform.GL32.*.conf
           /app/lib32
           /app/lib/i386-linux-gnu
+          /lib64
 
   - name: lbk-launcher
     buildsystem: simple

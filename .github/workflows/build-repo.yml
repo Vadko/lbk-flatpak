@@ -31,10 +31,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y flatpak flatpak-builder
           flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          flatpak install --user -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
-          flatpak install --user -y flathub org.electronjs.Electron2.BaseApp//24.08
+          flatpak install --user -y flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08
+          flatpak install --user -y flathub org.electronjs.Electron2.BaseApp//25.08
           # i386 SDK/runtime extensions for Proton/pressure-vessel (run via umu)
-          flatpak install --user -y flathub org.freedesktop.Sdk.Compat.i386//24.08 org.freedesktop.Sdk.Extension.toolchain-i386//24.08 org.freedesktop.Platform.Compat.i386//24.08
+          flatpak install --user -y flathub org.freedesktop.Sdk.Compat.i386//25.08 org.freedesktop.Sdk.Extension.toolchain-i386//25.08 org.freedesktop.Platform.Compat.i386//25.08
 
       - name: Get latest release info and download AppImage
         id: release
